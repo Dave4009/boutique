@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Merci pour votre commande | Dave Deliscart</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;400&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { --gold:#d4af37; --black-deep:#0a0a0a; --black-card:#141414; --white:#ffffff; --grey:#888; }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            background:var(--black-deep); color:var(--white);
+            font-family:'Inter',sans-serif;
+            min-height:100vh; display:flex; flex-direction:column;
+            justify-content:center; align-items:center; padding:20px;
+        }
+
+        .success-wrap { max-width:620px; width:100%; }
+
+        .success-icon {
+            width:80px; height:80px; border-radius:50%;
+            background:rgba(212,175,55,0.1); border:2px solid rgba(212,175,55,0.3);
+            display:flex; align-items:center; justify-content:center;
+            margin:0 auto 2rem; font-size:2rem; color:var(--gold);
+            animation:pulse 2s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%,100% { box-shadow:0 0 0 0 rgba(212,175,55,0.2); }
+            50% { box-shadow:0 0 0 16px rgba(212,175,55,0); }
+        }
+
+        .success-title {
+            font-family:'Playfair Display',serif; font-size:2.5rem;
+            color:var(--gold); text-align:center; margin-bottom:0.5rem; font-weight:400;
+        }
+        .success-sub { text-align:center; color:var(--grey); font-size:0.9rem; margin-bottom:2.5rem; line-height:1.6; }
+
+        .card {
+            background:var(--black-card); border:1px solid rgba(212,175,55,0.15);
+            padding:2rem; margin-bottom:1rem;
+        }
+        .card-label { font-size:0.72rem; text-transform:uppercase; letter-spacing:2px; color:var(--gold); margin-bottom:1.2rem; }
+        .customer-summary {
+            background:rgba(212,175,55,0.06); border:1px solid rgba(212,175,55,0.15);
+            padding:14px 16px; margin-bottom:1rem; color:rgba(255,255,255,0.84);
+            font-size:0.82rem; line-height:1.7;
+        }
+        .customer-summary strong { color:var(--gold); display:block; font-size:0.72rem; text-transform:uppercase; letter-spacing:1.5px; margin-bottom:6px; }
+
+        .order-item {
+            display:flex; align-items:center; justify-content:space-between; gap:15px;
+            padding:1rem 0; border-bottom:1px solid rgba(255,255,255,0.05);
+        }
+        .order-item:last-child { border-bottom:none; padding-bottom:0; }
+        .order-item-left { display:flex; gap:12px; align-items:center; flex:1; }
+        .order-item img { width:55px; height:65px; object-fit:cover; border-radius:2px; }
+        .order-item-name { font-size:0.95rem; margin-bottom:3px; }
+        .order-item-type { font-size:0.72rem; color:var(--grey); }
+
+        .btn-download {
+            display:inline-flex; align-items:center; gap:6px;
+            background:var(--gold); color:var(--black-deep);
+            text-decoration:none; padding:9px 16px;
+            font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:1px;
+            transition:background 0.3s; flex-shrink:0; border-radius:2px;
+        }
+        .btn-download:hover { background:#fff; }
+
+        .shipping-notice {
+            background:rgba(212,175,55,0.05); border:1px solid rgba(212,175,55,0.15);
+            padding:12px 16px; font-size:0.8rem; color:var(--grey);
+            display:flex; align-items:center; gap:8px; margin-top:10px;
+        }
+        .shipping-notice i { color:var(--gold); flex-shrink:0; }
+
+        .btn-home {
+            display:flex; align-items:center; justify-content:center; gap:8px;
+            background:transparent; border:1px solid rgba(212,175,55,0.3);
+            color:var(--gold); text-decoration:none; padding:14px;
+            font-size:0.85rem; text-transform:uppercase; letter-spacing:1px;
+            transition:all 0.3s; margin-top:1.5rem;
+        }
+        .btn-home:hover { background:var(--gold); color:var(--black-deep); border-color:var(--gold); }
+
+        .empty-order { text-align:center; color:var(--grey); padding:2rem; }
+    </style>
+</head>
+<body>
+
+<div class="success-wrap">
+    <div class="success-icon"><i class="fas fa-check"></i></div>
+    <h1 class="success-title">Merci !</h1>
+    <p class="success-sub">Votre transaction a été validée avec succès.<br>Nous utiliserons vos coordonnées pour le suivi de commande.</p>
+
+    <div class="customer-summary" id="customer-summary" style="display:none"></div>
+
+    <div class="card" id="order-card">
+        <div class="card-label"><i class="fas fa-receipt" style="margin-right:6px"></i>Votre commande</div>
+        <div id="order-list"></div>
+    </div>
+
+    <a href="index.html" class="btn-home"><i class="fas fa-arrow-left"></i> Retourner à la boutique</a>
+</div>
+
+<script>
+    function render() {
+        const order = JSON.parse(sessionStorage.getItem('dd_last_order') || '[]');
+        const customer = JSON.parse(sessionStorage.getItem('dd_last_customer') || 'null');
+        const list = document.getElementById('order-list');
+        const customerBox = document.getElementById('customer-summary');
+
+        if (customer && customer.email && customer.phone) {
+            customerBox.style.display = 'block';
+            customerBox.innerHTML = `
+                <strong>Informations client</strong>
+                ${customer.name ? `${customer.name}<br>` : ''}
+                ${customer.email}<br>
+                ${customer.phone}
+                ${customer.address ? `<br><br><strong>Adresse de livraison</strong>${customer.address}<br>${customer.city || ''}${customer.postal_code ? ', ' + customer.postal_code : ''}<br>${customer.country_name || customer.country || ''}` : ''}`;
+        }
+
+        if (!order.length) {
+            list.innerHTML = '<div class="empty-order">Aucune commande récente trouvée.</div>';
+            return;
+        }
+
+        const hasPhysical = order.some(i => i.deliverytype === 'physical');
+
+        list.innerHTML = order.map(item => {
+            const isDigital = item.deliverytype === 'digital';
+            return `
+            <div class="order-item">
+                <div class="order-item-left">
+                    <img src="${item.image}" alt="${item.name}" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgNTAwIj4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iYmciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iIzBhMGEwYSIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiMxYTFhMWEiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgICA8cmFkaWFsR3JhZGllbnQgaWQ9Imdsb3ciIGN4PSI1MCUiIGN5PSIzOCUiIHI9IjU1JSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiNkNGFmMzciIHN0b3Atb3BhY2l0eT0iMC4yMiIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiNkNGFmMzciIHN0b3Atb3BhY2l0eT0iMCIvPgogICAgPC9yYWRpYWxHcmFkaWVudD4KICA8L2RlZnM+CiAgPHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSI1MDAiIGZpbGw9InVybCgjYmcpIi8+CiAgPHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSI1MDAiIGZpbGw9InVybCgjZ2xvdykiLz4KICA8dGV4dCB4PSIyMDAiIHk9IjI1MCIgZm9udC1mYW1pbHk9Ikdlb3JnaWEsICdUaW1lcyBOZXcgUm9tYW4nLCBzZXJpZiIgZm9udC1zaXplPSIxMTAiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2Q0YWYzNyIgc3Ryb2tlLW9wYWNpdHk9IjAuNCIgc3Ryb2tlLXdpZHRoPSIxLjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiPkREPC90ZXh0PgogIDxsaW5lIHgxPSIxNzAiIHkxPSIzMDAiIHgyPSIyMzAiIHkyPSIzMDAiIHN0cm9rZT0iI2Q0YWYzNyIgc3Ryb2tlLW9wYWNpdHk9IjAuNTUiIHN0cm9rZS13aWR0aD0iMS41Ii8+CiAgPHRleHQgeD0iMjAwIiB5PSIzMzAiIGZvbnQtZmFtaWx5PSJHZW9yZ2lhLCBzZXJpZiIgZm9udC1zaXplPSIxMyIgbGV0dGVyLXNwYWNpbmc9IjMiIGZpbGw9IiM4ODgiIHRleHQtYW5jaG9yPSJtaWRkbGUiPkRBVkUgREVMSVNDQVJUPC90ZXh0Pgo8L3N2Zz4='">
+                    <div>
+                        <div class="order-item-name">${item.name}</div>
+                        <div class="order-item-type">${isDigital ? '<i class="fas fa-download" style="color:var(--gold);margin-right:3px"></i>Produit numérique' : '<i class="fas fa-truck" style="margin-right:3px"></i>Produit physique'}</div>
+                        <div style="color:var(--gold);font-size:0.85rem;font-weight:600;margin-top:3px">$${parseFloat(item.price).toFixed(2)}</div>
+                    </div>
+                </div>
+                ${isDigital && item.deliverylink
+                    ? `<a href="${item.deliverylink}" target="_blank" class="btn-download"><i class="fas fa-download"></i> Télécharger</a>`
+                    : isDigital ? '<span style="color:var(--grey);font-size:0.75rem">Lien en attente</span>' : ''}
+            </div>`;
+        }).join('');
+
+        if (hasPhysical) {
+            list.innerHTML += `
+                <div class="shipping-notice">
+                    <i class="fas fa-envelope"></i>
+                    <span>Un email de confirmation avec les détails de livraison vous sera envoyé prochainement.</span>
+                </div>`;
+        }
+
+        // Vider le panier après affichage de la confirmation
+        localStorage.removeItem('dd_cart');
+        localStorage.removeItem('dd_customer');
+        localStorage.removeItem('dd_last_customer');
+        localStorage.removeItem('dd_last_order');
+        localStorage.removeItem('dd_after_login');
+    }
+
+    render();
+</script>
+</body>
+</html>

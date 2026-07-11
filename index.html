@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DAVE DELISCART | Boutique Multi-Produits</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <meta name="description" content="Boutique Dave Deliscart. Catalogue multi-produits : livres, programmes, accessoires, vêtements et nouveautés.">
+    <meta property="og:title" content="DAVE DELISCART - Boutique Multi-Produits">
+    <meta property="og:description" content="Découvrez une sélection de produits digitaux et physiques.">
+    <meta property="og:image" content="og-image.png">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --gold: #d4af37;
+            --gold-light: #f3e5ab;
+            --black-deep: #0a0a0a;
+            --black-surface: #141414;
+            --black-card: #1a1a1a;
+            --white: #ffffff;
+            --grey: #888888;
+            --transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--black-deep); color: var(--white); font-family: 'Inter', sans-serif; overflow-x: hidden; }
+        h1,h2,h3,.logo { font-family: 'Playfair Display', serif; }
+
+        /* NAV */
+        header {
+            position: fixed; top: 0; width: 100%; z-index: 1000;
+            background: rgba(10,10,10,0.96); backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(212,175,55,0.15);
+            padding: 1.2rem 5%;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .logo { display: flex; align-items: center; gap: 10px; font-size: 1.4rem; font-weight: 700; letter-spacing: 3px; text-decoration: none; color: var(--white); }
+        .logo span { color: var(--gold); }
+        .logo-mark {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+            border: 1px solid rgba(212,175,55,0.55);
+            background: radial-gradient(circle at 35% 30%, rgba(212,175,55,0.18), transparent 70%), var(--black-card);
+            color: var(--gold); font-family: 'Playfair Display', serif; font-weight: 700;
+            font-size: 0.7rem; letter-spacing: 0;
+        }
+        nav a { color: var(--white); text-decoration: none; margin-right: 2rem; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; transition: var(--transition); }
+        nav a:hover { color: var(--gold); }
+        .header-actions { display: flex; align-items: center; gap: 18px; }
+        .account-link {
+            color: var(--white); text-decoration: none; font-size: 0.8rem; text-transform: uppercase;
+            letter-spacing: 1px; transition: var(--transition); display: inline-flex; align-items: center; gap: 7px;
+        }
+        .account-link:hover { color: var(--gold); }
+        .cart-trigger { position: relative; cursor: pointer; font-size: 1.2rem; transition: var(--transition); color: var(--white); }
+        .cart-trigger:hover { color: var(--gold); }
+        .cart-count {
+            position: absolute; top: -10px; right: -14px;
+            background: var(--gold); color: var(--black-deep);
+            font-size: 0.65rem; font-weight: 800;
+            width: 20px; height: 20px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            transition: var(--transition);
+        }
+
+        /* LANGUAGE SWITCHER */
+        .lang-switcher { position: relative; }
+        .lang-trigger {
+            display: flex; align-items: center; gap: 6px;
+            background: transparent; border: 1px solid rgba(212,175,55,0.3);
+            color: var(--white); cursor: pointer; padding: 7px 11px;
+            font-family: 'Inter', sans-serif; font-size: 0.78rem; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 1px; border-radius: 2px;
+            transition: var(--transition);
+        }
+        .lang-trigger:hover { border-color: var(--gold); color: var(--gold); }
+        .lang-trigger i.fa-chevron-down { font-size: 0.6rem; transition: transform 0.25s; color: var(--gold); }
+        .lang-switcher.open .lang-trigger i.fa-chevron-down { transform: rotate(180deg); }
+        .lang-menu {
+            position: absolute; top: calc(100% + 8px); right: 0; min-width: 150px;
+            background: var(--black-card); border: 1px solid rgba(212,175,55,0.25);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+            opacity: 0; visibility: hidden; transform: translateY(-6px);
+            transition: var(--transition); z-index: 1100;
+        }
+        .lang-switcher.open .lang-menu { opacity: 1; visibility: visible; transform: translateY(0); }
+        .lang-option {
+            display: flex; align-items: center; gap: 10px; padding: 11px 14px;
+            cursor: pointer; font-size: 0.82rem; color: rgba(255,255,255,0.8);
+            transition: var(--transition); border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+        .lang-option:last-child { border-bottom: none; }
+        .lang-option:hover { background: rgba(212,175,55,0.08); color: var(--gold); }
+        .lang-option.active { color: var(--gold); font-weight: 600; }
+        .lang-option .flag { font-size: 1rem; }
+        .lang-option .check { margin-left: auto; font-size: 0.72rem; opacity: 0; }
+        .lang-option.active .check { opacity: 1; }
+
+        @media (max-width: 768px) {
+            .lang-trigger span.lang-label-full { display: none; }
+        }
+
+        /* HERO — fond universel (dégradé noir profond + accent or, sans photo) */
+        .hero {
+            height: 65vh;
+            position: relative;
+            overflow: hidden;
+            background:
+                linear-gradient(rgba(5,5,5,0.72), rgba(5,5,5,0.86)),
+                url('https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=1800&q=80') center/cover;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            text-align: center; margin-top: 72px;
+        }
+        .hero::before {
+            content: 'SHOP';
+            position: absolute; top: 52%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Playfair Display', serif; font-weight: 700;
+            font-size: 34vw; line-height: 1; letter-spacing: -1.5vw;
+            color: rgba(212,175,55,0.035); -webkit-text-stroke: 1.5px rgba(212,175,55,0.16);
+            white-space: nowrap; pointer-events: none; z-index: 0;
+        }
+        .hero > * { position: relative; z-index: 1; }
+        .hero-eyebrow { color: var(--gold); font-size: 0.8rem; letter-spacing: 4px; text-transform: uppercase; margin-bottom: 1rem; }
+        .hero h1 { font-size: 3.8rem; letter-spacing: 2px; line-height: 1.1; margin-bottom: 1.2rem; }
+        .hero p { font-size: 1rem; color: rgba(255,255,255,0.7); letter-spacing: 1px; font-style: italic; }
+        .hero-line { width: 60px; height: 1px; background: var(--gold); margin: 1.5rem auto 0; }
+        .hero-cats { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 1.7rem; padding: 0 20px; }
+        .hero-cats span {
+            border: 1px solid rgba(212,175,55,0.35); color: rgba(255,255,255,0.82);
+            padding: 7px 14px; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1px;
+            background: rgba(10,10,10,0.45);
+        }
+
+        /* CATALOGUE */
+        .section-header { text-align: center; padding: 4rem 20px 2.5rem; }
+        .section-header h2 { font-size: 2rem; letter-spacing: 2px; margin-bottom: 0.5rem; }
+        .section-header p { color: var(--grey); font-size: 0.9rem; }
+        .section-line { width: 40px; height: 1px; background: var(--gold); margin: 1rem auto 0; }
+
+        /* FILTRES */
+        .filters { display: flex; justify-content: center; gap: 10px; padding: 0 20px 2.5rem; flex-wrap: wrap; }
+        .filter-btn {
+            padding: 7px 20px; border: 1px solid rgba(212,175,55,0.3); background: transparent;
+            color: var(--grey); cursor: pointer; font-size: 0.8rem; text-transform: uppercase;
+            letter-spacing: 1px; transition: var(--transition); border-radius: 2px;
+        }
+        .filter-btn:hover, .filter-btn.active {
+            background: var(--gold); color: var(--black-deep);
+            border-color: var(--gold); font-weight: 600;
+        }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 20px 5rem; }
+        .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 30px; }
+
+        .product-card {
+            background: var(--black-card);
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: var(--transition);
+            display: flex; flex-direction: column;
+            position: relative; overflow: hidden;
+        }
+        .product-card:hover { transform: translateY(-8px); border-color: rgba(212,175,55,0.4); box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+
+        .product-badge {
+            position: absolute; top: 15px; left: 15px;
+            background: var(--gold); color: var(--black-deep);
+            font-size: 0.65rem; font-weight: 700; letter-spacing: 1.5px;
+            padding: 4px 10px; text-transform: uppercase;
+        }
+        .digital-badge {
+            position: absolute; top: 15px; right: 15px;
+            background: rgba(10,10,10,0.8); border: 1px solid rgba(212,175,55,0.5);
+            color: var(--gold); font-size: 0.6rem; font-weight: 600; letter-spacing: 1px;
+            padding: 4px 8px; text-transform: uppercase;
+        }
+
+        .product-img { width: 100%; height: 280px; object-fit: cover; display: block; }
+
+        .product-body { padding: 1.5rem; flex: 1; display: flex; flex-direction: column; }
+        .product-name { font-size: 1.2rem; margin-bottom: 0.6rem; line-height: 1.3; }
+        .product-desc { color: var(--grey); font-size: 0.85rem; line-height: 1.6; flex: 1; margin-bottom: 1.2rem; }
+
+        .product-footer { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+        .product-price { font-size: 1.4rem; font-weight: 700; color: var(--gold); }
+
+        .btn-add {
+            background: transparent; border: 1px solid var(--gold); color: var(--gold);
+            padding: 10px 18px; cursor: pointer; font-size: 0.8rem; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 1px; transition: var(--transition);
+            white-space: nowrap;
+        }
+        .btn-add:hover { background: var(--gold); color: var(--black-deep); }
+        .btn-add.in-cart { background: var(--gold); color: var(--black-deep); }
+
+        /* EMPTY STATE */
+        .empty-state { text-align: center; padding: 5rem 20px; color: var(--grey); }
+        .empty-state i { font-size: 3rem; margin-bottom: 1rem; opacity: 0.3; }
+
+        /* LOADER */
+        .loader-container { display: flex; justify-content: center; padding: 4rem; }
+        .loader { width: 36px; height: 36px; border: 2px solid rgba(212,175,55,0.15); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* CART DRAWER */
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 1500; display: none; }
+        .overlay.active { display: block; }
+
+        .cart-drawer {
+            position: fixed; top: 0; right: -480px; width: 460px; height: 100%;
+            background: var(--black-surface); z-index: 2000;
+            box-shadow: -15px 0 40px rgba(0,0,0,0.6);
+            transition: right 0.4s cubic-bezier(0.165,0.84,0.44,1);
+            display: flex; flex-direction: column;
+        }
+        .cart-drawer.open { right: 0; }
+
+        .cart-head {
+            padding: 2rem 2rem 1.5rem;
+            border-bottom: 1px solid rgba(212,175,55,0.15);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .cart-head h3 { font-size: 1rem; letter-spacing: 2px; text-transform: uppercase; }
+        .cart-close { cursor: pointer; color: var(--grey); font-size: 1.1rem; transition: var(--transition); }
+        .cart-close:hover { color: var(--white); }
+
+        .cart-list { flex: 1; overflow-y: auto; padding: 1.5rem 2rem; }
+        .cart-list::-webkit-scrollbar { width: 3px; }
+        .cart-list::-webkit-scrollbar-thumb { background: rgba(212,175,55,0.3); }
+
+        .cart-item { display: flex; gap: 15px; margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .cart-item img { width: 65px; height: 80px; object-fit: cover; border-radius: 2px; flex-shrink: 0; }
+        .cart-item-info { flex: 1; }
+        .cart-item-info h4 { font-size: 0.95rem; margin-bottom: 4px; }
+        .cart-item-price { color: var(--gold); font-weight: 600; font-size: 0.9rem; }
+        .cart-item-type { color: var(--grey); font-size: 0.75rem; margin-top: 2px; }
+        .btn-remove { color: #ff4d4d; cursor: pointer; font-size: 0.75rem; margin-top: 6px; display: inline-flex; align-items: center; gap: 4px; transition: opacity 0.2s; }
+        .btn-remove:hover { opacity: 0.7; }
+
+        .cart-empty-msg { text-align: center; color: var(--grey); padding: 3rem 0; }
+        .cart-empty-msg i { font-size: 2.5rem; display: block; margin-bottom: 1rem; opacity: 0.3; }
+
+        .cart-foot { padding: 1.5rem 2rem 2rem; border-top: 1px solid rgba(212,175,55,0.2); }
+        .cart-total-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem; }
+        .cart-total-label { color: var(--grey); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; }
+        .cart-total-amount { font-size: 1.6rem; font-weight: 700; color: var(--gold); }
+
+        .cart-note { font-size: 0.72rem; color: var(--grey); text-align: center; margin-bottom: 1rem; }
+
+        .btn-checkout-main {
+            width: 100%; background: var(--gold); color: var(--black-deep);
+            border: none; padding: 16px; font-weight: 700; font-size: 0.9rem;
+            text-transform: uppercase; letter-spacing: 2px; cursor: pointer;
+            transition: var(--transition); display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .btn-checkout-main:hover { background: var(--white); }
+        .btn-checkout-main:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* TOAST */
+        .toast {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px);
+            background: var(--black-card); border: 1px solid rgba(212,175,55,0.4);
+            color: var(--white); padding: 12px 24px; font-size: 0.85rem;
+            z-index: 9999; border-radius: 2px; transition: transform 0.4s cubic-bezier(0.165,0.84,0.44,1);
+            display: flex; align-items: center; gap: 10px; white-space: nowrap;
+        }
+        .toast.show { transform: translateX(-50%) translateY(0); }
+        .toast i { color: var(--gold); }
+
+        @media (max-width: 768px) {
+            .cart-drawer { width: 100%; right: -100%; }
+            .hero h1 { font-size: 2.4rem; }
+            nav { display: none; }
+            .account-link span { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <a href="index.html" class="logo"><span class="logo-mark">DD</span>DAVE <span>DELISCART</span></a>
+    <nav>
+        <a href="#boutique" data-i18n="nav_shop">Boutique</a>
+        <a href="login.html" data-i18n="nav_account">Compte</a>
+        <a href="admin.html" data-i18n="nav_admin">Admin</a>
+    </nav>
+    <div class="header-actions">
+        <div class="lang-switcher" id="lang-switcher">
+            <button class="lang-trigger" onclick="toggleLangMenu()">
+                <span class="flag" id="lang-flag-current">🇫🇷</span>
+                <span class="lang-label-full" id="lang-label-current">FR</span>
+                <i class="fas fa-chevron-down"></i>
+            </button>
+            <div class="lang-menu">
+                <div class="lang-option" data-lang="fr" onclick="setLanguage('fr')">
+                    <span class="flag">🇫🇷</span><span>Français</span><i class="fas fa-check check"></i>
+                </div>
+                <div class="lang-option" data-lang="en" onclick="setLanguage('en')">
+                    <span class="flag">🇬🇧</span><span>English</span><i class="fas fa-check check"></i>
+                </div>
+                <div class="lang-option" data-lang="es" onclick="setLanguage('es')">
+                    <span class="flag">🇪🇸</span><span>Español</span><i class="fas fa-check check"></i>
+                </div>
+            </div>
+        </div>
+        <a href="login.html" class="account-link"><i class="fas fa-user"></i><span id="account-label" data-i18n="nav_account">Compte</span></a>
+        <div class="cart-trigger" onclick="toggleCart()">
+            <i class="fas fa-shopping-bag"></i>
+            <span class="cart-count" id="cart-count">0</span>
+        </div>
+    </div>
+</header>
+
+<section class="hero">
+    <p class="hero-eyebrow" data-i18n="hero_eyebrow">Boutique Multi-Produits</p>
+    <h1 data-i18n-html="hero_title">Tout Pour<br>Votre Quotidien</h1>
+    <p data-i18n="hero_sub">Produits digitaux, articles physiques, éditions limitées et nouveautés.</p>
+    <div class="hero-line"></div>
+    <div class="hero-cats">
+        <span data-i18n="cat_books">Livres</span>
+        <span data-i18n="cat_programs">Programmes</span>
+        <span data-i18n="cat_clothes">Vêtements</span>
+        <span data-i18n="cat_accessories">Accessoires</span>
+    </div>
+</section>
+
+<div class="section-header" id="boutique">
+    <h2 data-i18n="catalog_title">Catalogue Boutique</h2>
+    <p data-i18n="catalog_sub">Explorez nos produits par catégorie</p>
+    <div class="section-line"></div>
+</div>
+
+<div class="filters" id="filters-container">
+    <button class="filter-btn active" onclick="filterProducts('ALL')" data-i18n="filter_all">Tout</button>
+</div>
+
+<main class="container">
+    <div class="loader-container" id="loader"><div class="loader"></div></div>
+    <div class="products-grid" id="products-grid" style="display:none"></div>
+</main>
+
+<!-- OVERLAY -->
+<div class="overlay" id="overlay" onclick="toggleCart()"></div>
+
+<!-- CART DRAWER -->
+<div class="cart-drawer" id="cart-drawer">
+    <div class="cart-head">
+        <h3><i class="fas fa-shopping-bag" style="color:var(--gold);margin-right:8px"></i><span data-i18n="cart_title">Votre Panier</span></h3>
+        <i class="fas fa-times cart-close" onclick="toggleCart()"></i>
+    </div>
+    <div class="cart-list" id="cart-list"></div>
+    <div class="cart-foot">
+        <div class="cart-total-row">
+            <span class="cart-total-label" data-i18n="cart_total_label">Total</span>
+            <span class="cart-total-amount" id="cart-total">$0.00</span>
+        </div>
+        <p class="cart-note"><i class="fas fa-lock" style="margin-right:4px"></i><span data-i18n="cart_secure_note">Paiement 100% sécurisé via Stripe</span></p>
+        <button class="btn-checkout-main" onclick="checkout()" id="btn-checkout">
+            <i class="fas fa-credit-card"></i> <span data-i18n="cart_checkout_btn">Passer la commande</span>
+        </button>
+    </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"><i class="fas fa-check-circle"></i><span id="toast-msg"></span></div>
+
+<script>
+    const SUPABASE_URL = 'https://ahvbjimxxkujbjvffibr.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFodmJqaW14eGt1amJqdmZmaWJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5NzYyNjQsImV4cCI6MjA5NjU1MjI2NH0.gFYIIx_hO5Jwu0XTMdxzLw3tNdPFFwz6nq6VxVY5cts';
+    const { createClient } = supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // ─── TRADUCTIONS ───
+    const I18N = {
+        fr: {
+            nav_shop: 'Boutique', nav_account: 'Compte', nav_admin: 'Admin',
+            account_logged: 'Mon compte',
+            hero_eyebrow: 'Boutique Multi-Produits',
+            hero_title: 'Tout Pour<br>Votre Quotidien',
+            hero_sub: 'Produits digitaux, articles physiques, éditions limitées et nouveautés.',
+            cat_books: 'Livres', cat_programs: 'Programmes', cat_clothes: 'Vêtements', cat_accessories: 'Accessoires',
+            catalog_title: 'Catalogue Boutique', catalog_sub: 'Explorez nos produits par catégorie',
+            filter_all: 'Tout',
+            empty_products: 'Aucun produit disponible.',
+            btn_added: 'Ajouté', btn_add: 'Ajouter',
+            cart_title: 'Votre Panier', cart_total_label: 'Total',
+            cart_secure_note: 'Paiement 100% sécurisé via Stripe',
+            cart_checkout_btn: 'Passer la commande',
+            cart_empty: 'Votre panier est vide.',
+            digital_badge: 'Digital', physical_label: 'Physique',
+            toast_added: 'ajouté au panier', toast_removed: 'retiré du panier',
+            alert_missing_link: 'Lien de paiement manquant pour ce produit.',
+            alert_order_error: 'Impossible d’enregistrer la commande dans Supabase : '
+        },
+        en: {
+            nav_shop: 'Shop', nav_account: 'Account', nav_admin: 'Admin',
+            account_logged: 'My account',
+            hero_eyebrow: 'Multi-Product Store',
+            hero_title: 'Everything For<br>Your Everyday',
+            hero_sub: 'Digital products, physical items, limited editions and new arrivals.',
+            cat_books: 'Books', cat_programs: 'Programs', cat_clothes: 'Clothing', cat_accessories: 'Accessories',
+            catalog_title: 'Store Catalog', catalog_sub: 'Browse our products by category',
+            filter_all: 'All',
+            empty_products: 'No products available.',
+            btn_added: 'Added', btn_add: 'Add',
+            cart_title: 'Your Cart', cart_total_label: 'Total',
+            cart_secure_note: '100% secure payment via Stripe',
+            cart_checkout_btn: 'Proceed to checkout',
+            cart_empty: 'Your cart is empty.',
+            digital_badge: 'Digital', physical_label: 'Physical',
+            toast_added: 'added to cart', toast_removed: 'removed from cart',
+            alert_missing_link: 'Missing payment link for this product.',
+            alert_order_error: 'Could not save the order in Supabase: '
+        },
+        es: {
+            nav_shop: 'Tienda', nav_account: 'Cuenta', nav_admin: 'Admin',
+            account_logged: 'Mi cuenta',
+            hero_eyebrow: 'Tienda Multi-Producto',
+            hero_title: 'Todo Para<br>Tu Día a Día',
+            hero_sub: 'Productos digitales, artículos físicos, ediciones limitadas y novedades.',
+            cat_books: 'Libros', cat_programs: 'Programas', cat_clothes: 'Ropa', cat_accessories: 'Accesorios',
+            catalog_title: 'Catálogo de la Tienda', catalog_sub: 'Explora nuestros productos por categoría',
+            filter_all: 'Todo',
+            empty_products: 'No hay productos disponibles.',
+            btn_added: 'Añadido', btn_add: 'Añadir',
+            cart_title: 'Tu Carrito', cart_total_label: 'Total',
+            cart_secure_note: 'Pago 100% seguro con Stripe',
+            cart_checkout_btn: 'Finalizar compra',
+            cart_empty: 'Tu carrito está vacío.',
+            digital_badge: 'Digital', physical_label: 'Físico',
+            toast_added: 'añadido al carrito', toast_removed: 'eliminado del carrito',
+            alert_missing_link: 'Falta el enlace de pago para este producto.',
+            alert_order_error: 'No se pudo guardar el pedido en Supabase: '
+        }
+    };
+    const LANG_FLAGS = { fr: '🇫🇷', en: '🇬🇧', es: '🇪🇸' };
+    const LANG_LABELS = { fr: 'FR', en: 'EN', es: 'ES' };
+
+    function getLang() {
+        const saved = localStorage.getItem('dd_lang');
+        if (saved && I18N[saved]) return saved;
+        const browserLang = (navigator.language || 'fr').slice(0, 2);
+        return I18N[browserLang] ? browserLang : 'fr';
+    }
+
+    let currentLang = getLang();
+    function t(key) { return (I18N[currentLang] && I18N[currentLang][key]) || I18N.fr[key] || key; }
+
+    function applyStaticTranslations() {
+        document.documentElement.lang = currentLang;
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            el.textContent = t(el.dataset.i18n);
+        });
+        document.querySelectorAll('[data-i18n-html]').forEach(el => {
+            el.innerHTML = t(el.dataset.i18nHtml);
+        });
+        document.getElementById('lang-flag-current').textContent = LANG_FLAGS[currentLang];
+        document.getElementById('lang-label-current').textContent = LANG_LABELS[currentLang];
+        document.querySelectorAll('.lang-option').forEach(opt => {
+            opt.classList.toggle('active', opt.dataset.lang === currentLang);
+        });
+    }
+
+    function setLanguage(lang) {
+        if (!I18N[lang]) return;
+        localStorage.setItem('dd_lang', lang);
+        currentLang = lang;
+        toggleLangMenu(false);
+        applyStaticTranslations();
+        buildFilters();
+        renderGrid();
+        updateCartUI();
+        updateAccountLabel();
+    }
+
+    function toggleLangMenu(force) {
+        const el = document.getElementById('lang-switcher');
+        const shouldOpen = typeof force === 'boolean' ? force : !el.classList.contains('open');
+        el.classList.toggle('open', shouldOpen);
+    }
+
+    document.addEventListener('click', (e) => {
+        const switcher = document.getElementById('lang-switcher');
+        if (switcher && !switcher.contains(e.target)) toggleLangMenu(false);
+    });
+
+    applyStaticTranslations();
+
+    let allProducts = [];
+    let cart = JSON.parse(localStorage.getItem('dd_cart')) || [];
+    let customer = JSON.parse(sessionStorage.getItem('dd_customer') || 'null');
+    let currentFilter = 'ALL';
+
+    // ─── CHARGEMENT ───
+    async function loadProducts() {
+        try {
+            const { data, error } = await db.from('products').select('*').order('created_at', { ascending: false });
+            if (error) throw error;
+            allProducts = data || [];
+        } catch (e) {
+            console.warn('Supabase:', e.message);
+            allProducts = JSON.parse(localStorage.getItem('dd_products_cache')) || [];
+        }
+        localStorage.setItem('dd_products_cache', JSON.stringify(allProducts));
+        buildFilters();
+        renderGrid();
+        document.getElementById('loader').style.display = 'none';
+        document.getElementById('products-grid').style.display = 'grid';
+    }
+
+    function buildFilters() {
+        const cats = [...new Set(allProducts.map(p => p.category))];
+        const container = document.getElementById('filters-container');
+        container.innerHTML = `<button class="filter-btn ${currentFilter === 'ALL' ? 'active' : ''}" onclick="filterProducts('ALL')">${t('filter_all')}</button>`;
+        cats.forEach(cat => {
+            container.innerHTML += `<button class="filter-btn ${currentFilter === cat ? 'active' : ''}" onclick="filterProducts('${cat}')">${cat}</button>`;
+        });
+    }
+
+    function filterProducts(cat) {
+        currentFilter = cat;
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        event.target.classList.add('active');
+        renderGrid();
+    }
+
+    function renderGrid() {
+        const grid = document.getElementById('products-grid');
+        const filtered = currentFilter === 'ALL' ? allProducts : allProducts.filter(p => p.category === currentFilter);
+
+        if (!filtered.length) {
+            grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><i class="fas fa-box-open"></i><p>${t('empty_products')}</p></div>`;
+            return;
+        }
+
+        grid.innerHTML = filtered.map(p => {
+            const inCart = cart.some(c => c.id === p.id);
+            return `
+            <div class="product-card">
+                <span class="product-badge">${p.category}</span>
+                ${p.deliverytype === 'digital' ? `<span class="digital-badge"><i class="fas fa-download" style="margin-right:3px"></i>${t('digital_badge')}</span>` : ''}
+                <img src="${p.image || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgNTAwIj4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iYmciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iIzBhMGEwYSIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiMxYTFhMWEiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgICA8cmFkaWFsR3JhZGllbnQgaWQ9Imdsb3ciIGN4PSI1MCUiIGN5PSIzOCUiIHI9IjU1JSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiNkNGFmMzciIHN0b3Atb3BhY2l0eT0iMC4yMiIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiNkNGFmMzciIHN0b3Atb3BhY2l0eT0iMCIvPgogICAgPC9yYWRpYWxHcmFkaWVudD4KICA8L2RlZnM+CiAgPHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSI1MDAiIGZpbGw9InVybCgjYmcpIi8+CiAgPHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSI1MDAiIGZpbGw9InVybCgjZ2xvdykiLz4KICA8dGV4dCB4PSIyMDAiIHk9IjI1MCIgZm9udC1mYW1pbHk9Ikdlb3JnaWEsICdUaW1lcyBOZXcgUm9tYW4nLCBzZXJpZiIgZm9udC1zaXplPSIxMTAiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2Q0YWYzNyIgc3Ryb2tlLW9wYWNpdHk9IjAuNCIgc3Ryb2tlLXdpZHRoPSIxLjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiPkREPC90ZXh0PgogIDxsaW5lIHgxPSIxNzAiIHkxPSIzMDAiIHgyPSIyMzAiIHkyPSIzMDAiIHN0cm9rZT0iI2Q0YWYzNyIgc3Ryb2tlLW9wYWNpdHk9IjAuNTUiIHN0cm9rZS13aWR0aD0iMS41Ii8+CiAgPHRleHQgeD0iMjAwIiB5PSIzMzAiIGZvbnQtZmFtaWx5PSJHZW9yZ2lhLCBzZXJpZiIgZm9udC1zaXplPSIxMyIgbGV0dGVyLXNwYWNpbmc9IjMiIGZpbGw9IiM4ODgiIHRleHQtYW5jaG9yPSJtaWRkbGUiPkRBVkUgREVMSVNDQVJUPC90ZXh0Pgo8L3N2Zz4='}" alt="${p.name}" class="product-img" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgNTAwIj4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iYmciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iIzBhMGEwYSIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiMxYTFhMWEiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgICA8cmFkaWFsR3JhZGllbnQgaWQ9Imdsb3ciIGN4PSI1MCUiIGN5PSIzOCUiIHI9IjU1JSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiNkNGFmMzciIHN0b3Atb3BhY2l0eT0iMC4yMiIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiNkNGFmMzciIHN0b3Atb3BhY2l0eT0iMCIvPgogICAgPC9yYWRpYWxHcmFkaWVudD4KICA8L2RlZnM+CiAgPHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSI1MDAiIGZpbGw9InVybCgjYmcpIi8+CiAgPHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSI1MDAiIGZpbGw9InVybCgjZ2xvdykiLz4KICA8dGV4dCB4PSIyMDAiIHk9IjI1MCIgZm9udC1mYW1pbHk9Ikdlb3JnaWEsICdUaW1lcyBOZXcgUm9tYW4nLCBzZXJpZiIgZm9udC1zaXplPSIxMTAiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2Q0YWYzNyIgc3Ryb2tlLW9wYWNpdHk9IjAuNCIgc3Ryb2tlLXdpZHRoPSIxLjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiPkREPC90ZXh0PgogIDxsaW5lIHgxPSIxNzAiIHkxPSIzMDAiIHgyPSIyMzAiIHkyPSIzMDAiIHN0cm9rZT0iI2Q0YWYzNyIgc3Ryb2tlLW9wYWNpdHk9IjAuNTUiIHN0cm9rZS13aWR0aD0iMS41Ii8+CiAgPHRleHQgeD0iMjAwIiB5PSIzMzAiIGZvbnQtZmFtaWx5PSJHZW9yZ2lhLCBzZXJpZiIgZm9udC1zaXplPSIxMyIgbGV0dGVyLXNwYWNpbmc9IjMiIGZpbGw9IiM4ODgiIHRleHQtYW5jaG9yPSJtaWRkbGUiPkRBVkUgREVMSVNDQVJUPC90ZXh0Pgo8L3N2Zz4='">
+                <div class="product-body">
+                    <h3 class="product-name">${p.name}</h3>
+                    <p class="product-desc">${p.description || ''}</p>
+                    <div class="product-footer">
+                        <span class="product-price">$${parseFloat(p.price).toFixed(2)}</span>
+                        <button class="btn-add ${inCart ? 'in-cart' : ''}" id="btn-${p.id}" onclick="addToCart('${p.id}')">
+                            ${inCart ? `<i class="fas fa-check"></i> ${t('btn_added')}` : `<i class="fas fa-plus"></i> ${t('btn_add')}`}
+                        </button>
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    // ─── PANIER ───
+    function addToCart(id) {
+        const product = allProducts.find(p => String(p.id) === String(id));
+        if (!product) return;
+
+        const already = cart.some(c => String(c.id) === String(id));
+        if (already) {
+            cart = cart.filter(c => String(c.id) !== String(id));
+            showToast(`"${product.name}" ${t('toast_removed')}`);
+        } else {
+            cart.push(product);
+            showToast(`"${product.name}" ${t('toast_added')}`);
+            toggleCart(true);
+        }
+
+        saveCart();
+        renderGrid();
+        updateCartUI();
+    }
+
+    function removeFromCart(id) {
+        cart = cart.filter(c => String(c.id) !== String(id));
+        saveCart();
+        renderGrid();
+        updateCartUI();
+    }
+
+    function saveCart() {
+        localStorage.setItem('dd_cart', JSON.stringify(cart));
+    }
+
+    function updateCartUI() {
+        const count = document.getElementById('cart-count');
+        const list = document.getElementById('cart-list');
+        const total = document.getElementById('cart-total');
+        const btn = document.getElementById('btn-checkout');
+
+        count.textContent = cart.length;
+
+        if (!cart.length) {
+            list.innerHTML = `<div class="cart-empty-msg"><i class="fas fa-shopping-bag"></i><p>${t('cart_empty')}</p></div>`;
+            total.textContent = '$0.00';
+            btn.disabled = true;
+            return;
+        }
+
+        btn.disabled = false;
+        list.innerHTML = cart.map(item => `
+            <div class="cart-item">
+                <img src="${item.image}" alt="${item.name}" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgNTAwIj4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iYmciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iIzBhMGEwYSIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiMxYTFhMWEiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgICA8cmFkaWFsR3JhZGllbnQgaWQ9Imdsb3ciIGN4PSI1MCUiIGN5PSIzOCUiIHI9IjU1JSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiNkNGFmMzciIHN0b3Atb3BhY2l0eT0iMC4yMiIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiNkNGFmMzciIHN0b3Atb3BhY2l0eT0iMCIvPgogICAgPC9yYWRpYWxHcmFkaWVudD4KICA8L2RlZnM+CiAgPHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSI1MDAiIGZpbGw9InVybCgjYmcpIi8+CiAgPHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSI1MDAiIGZpbGw9InVybCgjZ2xvdykiLz4KICA8dGV4dCB4PSIyMDAiIHk9IjI1MCIgZm9udC1mYW1pbHk9Ikdlb3JnaWEsICdUaW1lcyBOZXcgUm9tYW4nLCBzZXJpZiIgZm9udC1zaXplPSIxMTAiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2Q0YWYzNyIgc3Ryb2tlLW9wYWNpdHk9IjAuNCIgc3Ryb2tlLXdpZHRoPSIxLjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiPkREPC90ZXh0PgogIDxsaW5lIHgxPSIxNzAiIHkxPSIzMDAiIHgyPSIyMzAiIHkyPSIzMDAiIHN0cm9rZT0iI2Q0YWYzNyIgc3Ryb2tlLW9wYWNpdHk9IjAuNTUiIHN0cm9rZS13aWR0aD0iMS41Ii8+CiAgPHRleHQgeD0iMjAwIiB5PSIzMzAiIGZvbnQtZmFtaWx5PSJHZW9yZ2lhLCBzZXJpZiIgZm9udC1zaXplPSIxMyIgbGV0dGVyLXNwYWNpbmc9IjMiIGZpbGw9IiM4ODgiIHRleHQtYW5jaG9yPSJtaWRkbGUiPkRBVkUgREVMSVNDQVJUPC90ZXh0Pgo8L3N2Zz4='">
+                <div class="cart-item-info">
+                    <h4>${item.name}</h4>
+                    <div class="cart-item-price">$${parseFloat(item.price).toFixed(2)}</div>
+                    <div class="cart-item-type">${item.deliverytype === 'digital' ? `<i class="fas fa-download" style="margin-right:3px;color:var(--gold)"></i>${t('digital_badge')}` : `<i class="fas fa-truck" style="margin-right:3px"></i>${t('physical_label')}`}</div>
+                    <span class="btn-remove" onclick="removeFromCart('${item.id}')"><i class="fas fa-trash"></i> Retirer</span>
+                </div>
+            </div>`).join('');
+
+        const totalVal = cart.reduce((s, i) => s + parseFloat(i.price), 0);
+        total.textContent = '$' + totalVal.toFixed(2);
+    }
+
+    function toggleCart(forceOpen = false) {
+        const drawer = document.getElementById('cart-drawer');
+        const overlay = document.getElementById('overlay');
+        if (forceOpen || !drawer.classList.contains('open')) {
+            drawer.classList.add('open');
+            overlay.classList.add('active');
+        } else {
+            drawer.classList.remove('open');
+            overlay.classList.remove('active');
+        }
+        updateCartUI();
+    }
+
+    // ─── CHECKOUT STRIPE ───
+    // Si 1 produit → redirige directement vers son lien Stripe
+    // Si multiple produits → redirige vers le lien Stripe du premier article
+    // (Stripe gère l'article individuel, donc chaque article a son propre lien)
+    async function createOrder(cartItems, customerData, selectedItem = null) {
+        const orderedItems = selectedItem ? [selectedItem] : cartItems;
+        const total = orderedItems.reduce((sum, item) => sum + Number(item.price || 0), 0);
+        const payload = {
+            customer_id: customerData.id || null,
+            customer_name: customerData.name || null,
+            customer_email: customerData.email,
+            customer_phone: customerData.phone,
+            items: orderedItems.map(item => ({
+                product_id: item.id,
+                name: item.name,
+                price: Number(item.price || 0),
+                category: item.category || null,
+                deliverytype: item.deliverytype || null
+            })),
+            total,
+            status: 'pending_payment',
+            stripe_payment_link: selectedItem?.stripepaymentlink || null
+        };
+
+        const { error } = await db.from('orders').insert([payload]);
+        if (error) throw error;
+        sessionStorage.setItem('dd_last_order', JSON.stringify(orderedItems));
+        sessionStorage.setItem('dd_last_customer', JSON.stringify(customerData));
+    }
+
+    async function checkout() {
+        if (!cart.length) return;
+
+        customer = JSON.parse(sessionStorage.getItem('dd_customer') || 'null');
+        if (!customer || !customer.email || !customer.phone) {
+            sessionStorage.setItem('dd_after_login', cart.length === 1 ? 'direct_checkout' : 'checkout_page');
+            window.location.href = 'login.html?next=checkout';
+            return;
+        }
+
+        if (cart.length === 1) {
+            // Un seul produit : lien direct
+            const link = cart[0].stripepaymentlink;
+            if (!link) return alert(t('alert_missing_link'));
+            try {
+                await createOrder(cart, customer, cart[0]);
+                window.location.href = link;
+            } catch (e) {
+                alert(t('alert_order_error') + e.message);
+            }
+        } else {
+            // Plusieurs produits : on redirige vers checkout.html
+            window.location.href = 'checkout.html';
+        }
+    }
+
+    // ─── TOAST ───
+    let toastTimer;
+    function showToast(msg) {
+        const toast = document.getElementById('toast');
+        document.getElementById('toast-msg').textContent = msg;
+        toast.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    // Écoute des changements Supabase en temps réel
+    db.channel('products-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => {
+            loadProducts();
+        })
+        .subscribe();
+
+    loadProducts();
+    updateCartUI();
+
+    function updateAccountLabel() {
+        const label = document.getElementById('account-label');
+        const savedCustomer = JSON.parse(sessionStorage.getItem('dd_customer') || 'null');
+        if (label) label.textContent = savedCustomer?.email ? t('account_logged') : t('nav_account');
+    }
+
+    localStorage.removeItem('dd_customer');
+    localStorage.removeItem('dd_last_customer');
+    localStorage.removeItem('dd_last_order');
+    localStorage.removeItem('dd_after_login');
+    updateAccountLabel();
+</script>
+</body>
+</html>

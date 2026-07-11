@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compte Client | Dave Deliscart</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;400&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root { --gold:#d4af37; --black-deep:#0a0a0a; --black-surface:#141414; --black-card:#1a1a1a; --white:#fff; --grey:#888; --green:#2ecc71; --red:#e74c3c; }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            min-height:100vh; background:
+                linear-gradient(rgba(5,5,5,0.78), rgba(5,5,5,0.92)),
+                url('https://images.unsplash.com/photo-1607082349566-187342175e2f?auto=format&fit=crop&w=1800&q=80') center/cover;
+            color:var(--white); font-family:'Inter',sans-serif;
+        }
+        h1,h2,.logo { font-family:'Playfair Display',serif; }
+        header {
+            background:rgba(10,10,10,0.96); border-bottom:1px solid rgba(212,175,55,0.15);
+            padding:1.2rem 5%; display:flex; justify-content:space-between; align-items:center;
+        }
+        .logo { display:flex; align-items:center; gap:10px; font-size:1.3rem; font-weight:700; letter-spacing:3px; text-decoration:none; color:var(--white); }
+        .logo span { color:var(--gold); }
+        .logo-mark {
+            display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px; border-radius:50%;
+            border:1px solid rgba(212,175,55,0.55); background:var(--black-card); color:var(--gold);
+            font-size:0.65rem; letter-spacing:0;
+        }
+        .back-link { color:var(--grey); text-decoration:none; font-size:0.82rem; text-transform:uppercase; letter-spacing:1px; display:inline-flex; align-items:center; gap:7px; }
+        .back-link:hover { color:var(--gold); }
+        main { min-height:calc(100vh - 74px); display:grid; grid-template-columns:minmax(0, 1fr) 430px; }
+        .intro {
+            display:flex; flex-direction:column; justify-content:center; padding:6rem 8%;
+        }
+        .eyebrow { color:var(--gold); font-size:0.78rem; text-transform:uppercase; letter-spacing:3px; margin-bottom:1rem; }
+        h1 { font-size:3.2rem; line-height:1.08; margin-bottom:1rem; }
+        .intro p { max-width:560px; color:rgba(255,255,255,0.72); line-height:1.8; font-size:0.98rem; }
+        .benefits { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:14px; max-width:680px; margin-top:2rem; }
+        .benefit { border:1px solid rgba(212,175,55,0.18); background:rgba(10,10,10,0.45); padding:16px; }
+        .benefit i { color:var(--gold); margin-bottom:10px; }
+        .benefit span { display:block; color:rgba(255,255,255,0.82); font-size:0.78rem; line-height:1.5; }
+        .panel {
+            background:rgba(20,20,20,0.98); border-left:1px solid rgba(212,175,55,0.18);
+            padding:3rem; display:flex; flex-direction:column; justify-content:center;
+        }
+        .panel-title { font-size:1.45rem; margin-bottom:0.6rem; }
+        .panel-sub { color:var(--grey); font-size:0.86rem; line-height:1.6; margin-bottom:2rem; }
+        .field { margin-bottom:1.2rem; }
+        label { display:block; font-size:0.74rem; color:var(--grey); margin-bottom:7px; text-transform:uppercase; letter-spacing:1px; }
+        input, select {
+            width:100%; padding:13px 14px; background:#0d0d0d; border:1px solid rgba(255,255,255,0.12);
+            color:var(--white); font-family:'Inter',sans-serif; font-size:0.95rem; outline:none; border-radius:2px;
+        }
+        select { appearance:none; -webkit-appearance:none;
+            background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23d4af37' stroke-width='2'><polyline points='6 9 12 15 18 9'/></svg>");
+            background-repeat:no-repeat; background-position:right 12px center; background-size:16px; padding-right:36px;
+        }
+        select option { background:#0d0d0d; color:#fff; }
+        input:focus, select:focus { border-color:var(--gold); }
+        .phone-group { display:flex; gap:8px; }
+        .phone-group .dial-code {
+            flex:0 0 92px; display:flex; align-items:center; justify-content:center;
+            background:#0d0d0d; border:1px solid rgba(255,255,255,0.12); color:var(--gold);
+            font-size:0.92rem; font-weight:600; border-radius:2px;
+        }
+        .phone-group input { flex:1; }
+        .field-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+        .section-divider {
+            display:flex; align-items:center; gap:10px; margin:1.6rem 0 1.2rem;
+            font-size:0.72rem; text-transform:uppercase; letter-spacing:2px; color:var(--gold);
+        }
+        .section-divider::after { content:''; flex:1; height:1px; background:rgba(212,175,55,0.18); }
+        .btn-primary {
+            width:100%; border:none; background:var(--gold); color:var(--black-deep); padding:15px;
+            cursor:pointer; font-weight:800; text-transform:uppercase; letter-spacing:1.5px; margin-top:0.4rem;
+        }
+        .btn-primary:hover { background:var(--white); }
+        .btn-primary:disabled { opacity:0.6; cursor:not-allowed; }
+        .btn-secondary {
+            width:100%; border:1px solid rgba(212,175,55,0.3); background:transparent; color:var(--gold); padding:13px;
+            cursor:pointer; font-weight:700; text-transform:uppercase; letter-spacing:1px; margin-top:10px;
+        }
+        .notice { display:none; margin-bottom:1rem; padding:11px 13px; font-size:0.82rem; line-height:1.5; border-left:3px solid var(--gold); background:rgba(212,175,55,0.08); color:rgba(255,255,255,0.82); }
+        .notice.error { border-left-color:var(--red); background:rgba(231,76,60,0.1); color:#ffb8b8; }
+        .privacy { color:var(--grey); font-size:0.72rem; line-height:1.6; margin-top:1rem; }
+        .saved-card {
+            display:none; border:1px solid rgba(46,204,113,0.25); background:rgba(46,204,113,0.06);
+            padding:14px; margin-bottom:1rem; font-size:0.82rem; color:rgba(255,255,255,0.86); line-height:1.7;
+        }
+        .saved-card i { color:var(--green); margin-right:6px; }
+        @media(max-width:850px) {
+            main { grid-template-columns:1fr; }
+            .intro { padding:4rem 20px 2rem; }
+            h1 { font-size:2.35rem; }
+            .benefits { grid-template-columns:1fr; }
+            .panel { border-left:none; border-top:1px solid rgba(212,175,55,0.18); padding:2rem 20px 3rem; }
+        }
+    </style>
+</head>
+<body>
+<header>
+    <a href="index.html" class="logo"><span class="logo-mark">DD</span>DAVE <span>DELISCART</span></a>
+    <a href="index.html" class="back-link"><i class="fas fa-arrow-left"></i> Boutique</a>
+</header>
+
+<main>
+    <section class="intro">
+        <div class="eyebrow">Espace Client</div>
+        <h1>Vos infos pour un suivi plus simple.</h1>
+        <p>Renseignez votre email et votre téléphone avant la commande. Ces informations serviront au suivi, aux confirmations et aux nouvelles importantes liées à vos achats.</p>
+        <div class="benefits">
+            <div class="benefit"><i class="fas fa-envelope"></i><span>Confirmations et détails de commande par email.</span></div>
+            <div class="benefit"><i class="fas fa-phone"></i><span>Contact rapide si une livraison demande une précision.</span></div>
+            <div class="benefit"><i class="fas fa-receipt"></i><span>Infos client associées au panier en cours.</span></div>
+        </div>
+    </section>
+
+    <section class="panel">
+        <h2 class="panel-title">Connexion client</h2>
+        <p class="panel-sub">Aucun mot de passe requis pour l’instant : on garde seulement les coordonnées nécessaires au suivi.</p>
+
+        <div class="notice" id="notice"></div>
+        <div class="saved-card" id="saved-card"></div>
+
+        <div class="field">
+            <label for="customer-name">Nom complet</label>
+            <input type="text" id="customer-name" placeholder="Votre nom">
+        </div>
+        <div class="field">
+            <label for="customer-email">Email *</label>
+            <input type="email" id="customer-email" placeholder="vous@example.com" autocomplete="email">
+        </div>
+        <div class="field">
+            <label for="customer-country">Pays *</label>
+            <select id="customer-country" onchange="onCountryChange()">
+                <option value="HT" data-dial="+509" selected>Haïti (+509)</option>
+<option value="AF" data-dial="+93">Afghanistan (+93)</option>
+<option value="ZA" data-dial="+27">Afrique du Sud (+27)</option>
+<option value="AL" data-dial="+355">Albanie (+355)</option>
+<option value="DZ" data-dial="+213">Algérie (+213)</option>
+<option value="DE" data-dial="+49">Allemagne (+49)</option>
+<option value="AD" data-dial="+376">Andorre (+376)</option>
+<option value="AO" data-dial="+244">Angola (+244)</option>
+<option value="AI" data-dial="+1264">Anguilla (+1264)</option>
+<option value="AG" data-dial="+1268">Antigua-et-Barbuda (+1268)</option>
+<option value="SA" data-dial="+966">Arabie saoudite (+966)</option>
+<option value="AR" data-dial="+54">Argentine (+54)</option>
+<option value="AM" data-dial="+374">Arménie (+374)</option>
+<option value="AW" data-dial="+297">Aruba (+297)</option>
+<option value="AU" data-dial="+61">Australie (+61)</option>
+<option value="AT" data-dial="+43">Autriche (+43)</option>
+<option value="AZ" data-dial="+994">Azerbaïdjan (+994)</option>
+<option value="BS" data-dial="+1242">Bahamas (+1242)</option>
+<option value="BH" data-dial="+973">Bahreïn (+973)</option>
+<option value="BD" data-dial="+880">Bangladesh (+880)</option>
+<option value="BB" data-dial="+1246">Barbade (+1246)</option>
+<option value="BE" data-dial="+32">Belgique (+32)</option>
+<option value="BZ" data-dial="+501">Belize (+501)</option>
+<option value="BM" data-dial="+1441">Bermudes (+1441)</option>
+<option value="BT" data-dial="+975">Bhoutan (+975)</option>
+<option value="MM" data-dial="+95">Birmanie (Myanmar) (+95)</option>
+<option value="BY" data-dial="+375">Biélorussie (+375)</option>
+<option value="BO" data-dial="+591">Bolivie (+591)</option>
+<option value="BA" data-dial="+387">Bosnie-Herzégovine (+387)</option>
+<option value="BW" data-dial="+267">Botswana (+267)</option>
+<option value="BN" data-dial="+673">Brunei (+673)</option>
+<option value="BR" data-dial="+55">Brésil (+55)</option>
+<option value="BG" data-dial="+359">Bulgarie (+359)</option>
+<option value="BF" data-dial="+226">Burkina Faso (+226)</option>
+<option value="BI" data-dial="+257">Burundi (+257)</option>
+<option value="BJ" data-dial="+229">Bénin (+229)</option>
+<option value="KH" data-dial="+855">Cambodge (+855)</option>
+<option value="CM" data-dial="+237">Cameroun (+237)</option>
+<option value="CA" data-dial="+1">Canada (+1)</option>
+<option value="CV" data-dial="+238">Cap-Vert (+238)</option>
+<option value="CL" data-dial="+56">Chili (+56)</option>
+<option value="CN" data-dial="+86">Chine (+86)</option>
+<option value="CY" data-dial="+357">Chypre (+357)</option>
+<option value="CO" data-dial="+57">Colombie (+57)</option>
+<option value="KM" data-dial="+269">Comores (+269)</option>
+<option value="CG" data-dial="+242">Congo-Brazzaville (+242)</option>
+<option value="CD" data-dial="+243">Congo-Kinshasa (RDC) (+243)</option>
+<option value="KP" data-dial="+850">Corée du Nord (+850)</option>
+<option value="KR" data-dial="+82">Corée du Sud (+82)</option>
+<option value="CR" data-dial="+506">Costa Rica (+506)</option>
+<option value="HR" data-dial="+385">Croatie (+385)</option>
+<option value="CU" data-dial="+53">Cuba (+53)</option>
+<option value="CW" data-dial="+599">Curaçao (+599)</option>
+<option value="CI" data-dial="+225">Côte d'Ivoire (+225)</option>
+<option value="DK" data-dial="+45">Danemark (+45)</option>
+<option value="DJ" data-dial="+253">Djibouti (+253)</option>
+<option value="DM" data-dial="+1767">Dominique (+1767)</option>
+<option value="ES" data-dial="+34">Espagne (+34)</option>
+<option value="EE" data-dial="+372">Estonie (+372)</option>
+<option value="SZ" data-dial="+268">Eswatini (+268)</option>
+<option value="FJ" data-dial="+679">Fidji (+679)</option>
+<option value="FI" data-dial="+358">Finlande (+358)</option>
+<option value="FR" data-dial="+33">France (+33)</option>
+<option value="GA" data-dial="+241">Gabon (+241)</option>
+<option value="GM" data-dial="+220">Gambie (+220)</option>
+<option value="GH" data-dial="+233">Ghana (+233)</option>
+<option value="GD" data-dial="+1473">Grenade (+1473)</option>
+<option value="GR" data-dial="+30">Grèce (+30)</option>
+<option value="GP" data-dial="+590">Guadeloupe (+590)</option>
+<option value="GT" data-dial="+502">Guatemala (+502)</option>
+<option value="GN" data-dial="+224">Guinée (+224)</option>
+<option value="GQ" data-dial="+240">Guinée équatoriale (+240)</option>
+<option value="GW" data-dial="+245">Guinée-Bissau (+245)</option>
+<option value="GY" data-dial="+592">Guyana (+592)</option>
+<option value="GF" data-dial="+594">Guyane française (+594)</option>
+<option value="GE" data-dial="+995">Géorgie (+995)</option>
+<option value="HN" data-dial="+504">Honduras (+504)</option>
+<option value="HK" data-dial="+852">Hong Kong (+852)</option>
+<option value="HU" data-dial="+36">Hongrie (+36)</option>
+<option value="IN" data-dial="+91">Inde (+91)</option>
+<option value="ID" data-dial="+62">Indonésie (+62)</option>
+<option value="IQ" data-dial="+964">Irak (+964)</option>
+<option value="IR" data-dial="+98">Iran (+98)</option>
+<option value="IE" data-dial="+353">Irlande (+353)</option>
+<option value="IS" data-dial="+354">Islande (+354)</option>
+<option value="IL" data-dial="+972">Israël (+972)</option>
+<option value="IT" data-dial="+39">Italie (+39)</option>
+<option value="JM" data-dial="+1876">Jamaïque (+1876)</option>
+<option value="JP" data-dial="+81">Japon (+81)</option>
+<option value="JO" data-dial="+962">Jordanie (+962)</option>
+<option value="KZ" data-dial="+7">Kazakhstan (+7)</option>
+<option value="KE" data-dial="+254">Kenya (+254)</option>
+<option value="KG" data-dial="+996">Kirghizistan (+996)</option>
+<option value="KI" data-dial="+686">Kiribati (+686)</option>
+<option value="XK" data-dial="+383">Kosovo (+383)</option>
+<option value="KW" data-dial="+965">Koweït (+965)</option>
+<option value="LA" data-dial="+856">Laos (+856)</option>
+<option value="LS" data-dial="+266">Lesotho (+266)</option>
+<option value="LV" data-dial="+371">Lettonie (+371)</option>
+<option value="LB" data-dial="+961">Liban (+961)</option>
+<option value="LR" data-dial="+231">Liberia (+231)</option>
+<option value="LY" data-dial="+218">Libye (+218)</option>
+<option value="LI" data-dial="+423">Liechtenstein (+423)</option>
+<option value="LT" data-dial="+370">Lituanie (+370)</option>
+<option value="LU" data-dial="+352">Luxembourg (+352)</option>
+<option value="MK" data-dial="+389">Macédoine du Nord (+389)</option>
+<option value="MG" data-dial="+261">Madagascar (+261)</option>
+<option value="MY" data-dial="+60">Malaisie (+60)</option>
+<option value="MW" data-dial="+265">Malawi (+265)</option>
+<option value="MV" data-dial="+960">Maldives (+960)</option>
+<option value="ML" data-dial="+223">Mali (+223)</option>
+<option value="MT" data-dial="+356">Malte (+356)</option>
+<option value="MA" data-dial="+212">Maroc (+212)</option>
+<option value="MQ" data-dial="+596">Martinique (+596)</option>
+<option value="MU" data-dial="+230">Maurice (+230)</option>
+<option value="MR" data-dial="+222">Mauritanie (+222)</option>
+<option value="MX" data-dial="+52">Mexique (+52)</option>
+<option value="FM" data-dial="+691">Micronésie (+691)</option>
+<option value="MD" data-dial="+373">Moldavie (+373)</option>
+<option value="MC" data-dial="+377">Monaco (+377)</option>
+<option value="MN" data-dial="+976">Mongolie (+976)</option>
+<option value="ME" data-dial="+382">Monténégro (+382)</option>
+<option value="MZ" data-dial="+258">Mozambique (+258)</option>
+<option value="NA" data-dial="+264">Namibie (+264)</option>
+<option value="NI" data-dial="+505">Nicaragua (+505)</option>
+<option value="NE" data-dial="+227">Niger (+227)</option>
+<option value="NG" data-dial="+234">Nigeria (+234)</option>
+<option value="NO" data-dial="+47">Norvège (+47)</option>
+<option value="NC" data-dial="+687">Nouvelle-Calédonie (+687)</option>
+<option value="NZ" data-dial="+64">Nouvelle-Zélande (+64)</option>
+<option value="NP" data-dial="+977">Népal (+977)</option>
+<option value="OM" data-dial="+968">Oman (+968)</option>
+<option value="UG" data-dial="+256">Ouganda (+256)</option>
+<option value="UZ" data-dial="+998">Ouzbékistan (+998)</option>
+<option value="PK" data-dial="+92">Pakistan (+92)</option>
+<option value="PW" data-dial="+680">Palaos (+680)</option>
+<option value="PS" data-dial="+970">Palestine (+970)</option>
+<option value="PA" data-dial="+507">Panama (+507)</option>
+<option value="PG" data-dial="+675">Papouasie-Nouvelle-Guinée (+675)</option>
+<option value="PY" data-dial="+595">Paraguay (+595)</option>
+<option value="NL" data-dial="+31">Pays-Bas (+31)</option>
+<option value="PH" data-dial="+63">Philippines (+63)</option>
+<option value="PL" data-dial="+48">Pologne (+48)</option>
+<option value="PF" data-dial="+689">Polynésie française (+689)</option>
+<option value="PR" data-dial="+1787">Porto Rico (+1787)</option>
+<option value="PT" data-dial="+351">Portugal (+351)</option>
+<option value="PE" data-dial="+51">Pérou (+51)</option>
+<option value="QA" data-dial="+974">Qatar (+974)</option>
+<option value="RO" data-dial="+40">Roumanie (+40)</option>
+<option value="GB" data-dial="+44">Royaume-Uni (+44)</option>
+<option value="RU" data-dial="+7">Russie (+7)</option>
+<option value="RW" data-dial="+250">Rwanda (+250)</option>
+<option value="CF" data-dial="+236">République centrafricaine (+236)</option>
+<option value="DO" data-dial="+1809">République dominicaine (+1809)</option>
+<option value="CZ" data-dial="+420">République tchèque (+420)</option>
+<option value="RE" data-dial="+262">Réunion (+262)</option>
+<option value="KN" data-dial="+1869">Saint-Kitts-et-Nevis (+1869)</option>
+<option value="SM" data-dial="+378">Saint-Marin (+378)</option>
+<option value="VC" data-dial="+1784">Saint-Vincent-et-les-Grenadines (+1784)</option>
+<option value="LC" data-dial="+1758">Sainte-Lucie (+1758)</option>
+<option value="SV" data-dial="+503">Salvador (+503)</option>
+<option value="WS" data-dial="+685">Samoa (+685)</option>
+<option value="RS" data-dial="+381">Serbie (+381)</option>
+<option value="SC" data-dial="+248">Seychelles (+248)</option>
+<option value="SL" data-dial="+232">Sierra Leone (+232)</option>
+<option value="SG" data-dial="+65">Singapour (+65)</option>
+<option value="SK" data-dial="+421">Slovaquie (+421)</option>
+<option value="SI" data-dial="+386">Slovénie (+386)</option>
+<option value="SO" data-dial="+252">Somalie (+252)</option>
+<option value="SD" data-dial="+249">Soudan (+249)</option>
+<option value="SS" data-dial="+211">Soudan du Sud (+211)</option>
+<option value="LK" data-dial="+94">Sri Lanka (+94)</option>
+<option value="CH" data-dial="+41">Suisse (+41)</option>
+<option value="SR" data-dial="+597">Suriname (+597)</option>
+<option value="SE" data-dial="+46">Suède (+46)</option>
+<option value="SY" data-dial="+963">Syrie (+963)</option>
+<option value="ST" data-dial="+239">São Tomé-et-Príncipe (+239)</option>
+<option value="SN" data-dial="+221">Sénégal (+221)</option>
+<option value="TJ" data-dial="+992">Tadjikistan (+992)</option>
+<option value="TZ" data-dial="+255">Tanzanie (+255)</option>
+<option value="TD" data-dial="+235">Tchad (+235)</option>
+<option value="TH" data-dial="+66">Thaïlande (+66)</option>
+<option value="TL" data-dial="+670">Timor oriental (+670)</option>
+<option value="TG" data-dial="+228">Togo (+228)</option>
+<option value="TO" data-dial="+676">Tonga (+676)</option>
+<option value="TT" data-dial="+1868">Trinité-et-Tobago (+1868)</option>
+<option value="TN" data-dial="+216">Tunisie (+216)</option>
+<option value="TM" data-dial="+993">Turkménistan (+993)</option>
+<option value="TR" data-dial="+90">Turquie (+90)</option>
+<option value="UA" data-dial="+380">Ukraine (+380)</option>
+<option value="UY" data-dial="+598">Uruguay (+598)</option>
+<option value="VU" data-dial="+678">Vanuatu (+678)</option>
+<option value="VE" data-dial="+58">Venezuela (+58)</option>
+<option value="VN" data-dial="+84">Vietnam (+84)</option>
+<option value="YE" data-dial="+967">Yémen (+967)</option>
+<option value="ZM" data-dial="+260">Zambie (+260)</option>
+<option value="ZW" data-dial="+263">Zimbabwe (+263)</option>
+<option value="EG" data-dial="+20">Égypte (+20)</option>
+<option value="AE" data-dial="+971">Émirats arabes unis (+971)</option>
+<option value="EC" data-dial="+593">Équateur (+593)</option>
+<option value="ER" data-dial="+291">Érythrée (+291)</option>
+<option value="US" data-dial="+1">États-Unis (+1)</option>
+<option value="ET" data-dial="+251">Éthiopie (+251)</option>
+            </select>
+        </div>
+        <div class="field">
+            <label for="customer-phone">Téléphone *</label>
+            <div class="phone-group">
+                <span class="dial-code" id="dial-code">+509</span>
+                <input type="tel" id="customer-phone" placeholder="0000 0000" autocomplete="tel">
+            </div>
+        </div>
+
+        <div class="section-divider">Adresse de livraison</div>
+        <div class="field">
+            <label for="customer-address">Adresse *</label>
+            <input type="text" id="customer-address" placeholder="Numéro, rue, appartement..." autocomplete="address-line1">
+        </div>
+        <div class="field-row">
+            <div class="field">
+                <label for="customer-city">Ville *</label>
+                <input type="text" id="customer-city" placeholder="Ville" autocomplete="address-level2">
+            </div>
+            <div class="field">
+                <label for="customer-postal">Code postal</label>
+                <input type="text" id="customer-postal" placeholder="Optionnel" autocomplete="postal-code">
+            </div>
+        </div>
+        <p class="privacy" style="margin-top:-0.4rem;margin-bottom:1.2rem">Le pays sélectionné ci-dessus sert aussi de pays de livraison.</p>
+
+        <button class="btn-primary" id="save-btn" onclick="saveCustomer()">
+            <i class="fas fa-check" style="margin-right:7px"></i>Enregistrer et continuer
+        </button>
+        <button class="btn-secondary" onclick="clearCustomer()">
+            <i class="fas fa-pen" style="margin-right:7px"></i>Changer mes infos
+        </button>
+        <p class="privacy">Ces informations sont envoyées directement dans Supabase, table `customers`. Le navigateur garde seulement une session temporaire pour terminer le paiement.</p>
+    </section>
+</main>
+
+<script>
+const SUPABASE_URL = 'https://ahvbjimxxkujbjvffibr.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFodmJqaW14eGt1amJqdmZmaWJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5NzYyNjQsImV4cCI6MjA5NjU1MjI2NH0.gFYIIx_hO5Jwu0XTMdxzLw3tNdPFFwz6nq6VxVY5cts';
+let db = null;
+try {
+    db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+} catch (_) {}
+
+const params = new URLSearchParams(window.location.search);
+const saved = JSON.parse(sessionStorage.getItem('dd_customer') || 'null');
+
+function showNotice(message, isError = false) {
+    const el = document.getElementById('notice');
+    el.textContent = message;
+    el.className = 'notice' + (isError ? ' error' : '');
+    el.style.display = 'block';
+}
+
+function currentDialCode() {
+    const sel = document.getElementById('customer-country');
+    return sel.options[sel.selectedIndex]?.dataset.dial || '';
+}
+
+function onCountryChange() {
+    document.getElementById('dial-code').textContent = currentDialCode();
+}
+
+function hydrate() {
+    onCountryChange();
+    if (!saved) return;
+    document.getElementById('customer-name').value = saved.name || '';
+    document.getElementById('customer-email').value = saved.email || '';
+    document.getElementById('customer-address').value = saved.address || '';
+    document.getElementById('customer-city').value = saved.city || '';
+    document.getElementById('customer-postal').value = saved.postal_code || '';
+
+    if (saved.country) {
+        document.getElementById('customer-country').value = saved.country;
+    }
+    onCountryChange();
+
+    // Le téléphone est stocké avec son indicatif (ex: +509 3711 2233) ; on retire l'indicatif pour le champ.
+    const dial = currentDialCode();
+    let localPhone = saved.phone || '';
+    if (dial && localPhone.startsWith(dial)) {
+        localPhone = localPhone.slice(dial.length).trim();
+    }
+    document.getElementById('customer-phone').value = localPhone;
+
+    document.getElementById('saved-card').style.display = 'block';
+    document.getElementById('saved-card').innerHTML = `<i class="fas fa-check-circle"></i>Infos enregistrées :<br>${saved.email}<br>${saved.phone}${saved.address ? `<br>${saved.address}, ${saved.city || ''}` : ''}`;
+}
+
+async function saveCustomer() {
+    const name = document.getElementById('customer-name').value.trim();
+    const email = document.getElementById('customer-email').value.trim();
+    const countrySel = document.getElementById('customer-country');
+    const country = countrySel.value;
+    const countryName = countrySel.options[countrySel.selectedIndex]?.text.replace(/\s*\(\+.*\)$/, '') || '';
+    const dialCode = currentDialCode();
+    const localPhone = document.getElementById('customer-phone').value.trim();
+    const address = document.getElementById('customer-address').value.trim();
+    const city = document.getElementById('customer-city').value.trim();
+    const postalCode = document.getElementById('customer-postal').value.trim();
+    const btn = document.getElementById('save-btn');
+
+    if (!email || !localPhone) {
+        showNotice('Email et téléphone sont nécessaires pour continuer.', true);
+        return;
+    }
+    if (!address || !city) {
+        showNotice('L’adresse de livraison (adresse et ville) est nécessaire pour continuer.', true);
+        return;
+    }
+
+    const phone = `${dialCode} ${localPhone}`.trim();
+    const customer = {
+        name, email, phone, country, country_name: countryName, phone_country_code: dialCode,
+        address, city, postal_code: postalCode, updated_at: new Date().toISOString()
+    };
+
+    btn.disabled = true;
+    btn.textContent = 'Enregistrement...';
+
+    try {
+        if (!db) throw new Error('Connexion Supabase indisponible.');
+        const dbFields = {
+            name, email, phone, country, phone_country_code: dialCode,
+            address, city, postal_code: postalCode, updated_at: customer.updated_at
+        };
+        const { error: insertError } = await db.from('customers').insert([dbFields]);
+        if (insertError && insertError.code === '23505') {
+            const { error: updateError } = await db.from('customers').update(dbFields).eq('email', email);
+            if (updateError) throw updateError;
+        } else if (insertError) {
+            throw insertError;
+        }
+        sessionStorage.setItem('dd_customer', JSON.stringify(customer));
+    } catch (e) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-check" style="margin-right:7px"></i>Enregistrer et continuer';
+        showNotice('Impossible d’enregistrer dans Supabase : ' + e.message, true);
+        return;
+    }
+
+    showNotice('Infos client enregistrées. Redirection en cours...');
+    setTimeout(continueFlow, 550);
+}
+
+async function createOrder(cart, customer, selectedItem = null) {
+    const orderedItems = selectedItem ? [selectedItem] : cart;
+    const total = orderedItems.reduce((sum, item) => sum + Number(item.price || 0), 0);
+    const payload = {
+        customer_id: customer.id || null,
+        customer_name: customer.name || null,
+        customer_email: customer.email,
+        customer_phone: customer.phone,
+        items: orderedItems.map(item => ({
+            product_id: item.id,
+            name: item.name,
+            price: Number(item.price || 0),
+            category: item.category || null,
+            deliverytype: item.deliverytype || null
+        })),
+        total,
+        status: 'pending_payment',
+        stripe_payment_link: selectedItem?.stripepaymentlink || null,
+        shipping_address: customer.address || null,
+        shipping_city: customer.city || null,
+        shipping_postal_code: customer.postal_code || null,
+        shipping_country: customer.country_name || customer.country || null
+    };
+
+    const { error } = await db.from('orders').insert([payload]);
+    if (error) throw error;
+    sessionStorage.setItem('dd_last_order', JSON.stringify(orderedItems));
+    sessionStorage.setItem('dd_last_customer', JSON.stringify(customer));
+}
+
+async function continueFlow() {
+    const cart = JSON.parse(localStorage.getItem('dd_cart')) || [];
+    const customer = JSON.parse(sessionStorage.getItem('dd_customer') || 'null');
+    const afterLogin = sessionStorage.getItem('dd_after_login');
+    sessionStorage.removeItem('dd_after_login');
+
+    if (params.get('next') === 'checkout' || afterLogin) {
+        if (afterLogin === 'direct_checkout' && cart.length === 1 && cart[0].stripepaymentlink) {
+            try {
+                await createOrder(cart, customer, cart[0]);
+                window.location.href = cart[0].stripepaymentlink;
+                return;
+            } catch (e) {
+                showNotice('Client enregistré, mais commande non créée : ' + e.message, true);
+                return;
+            }
+        }
+        window.location.href = 'checkout.html';
+        return;
+    }
+
+    window.location.href = 'index.html';
+}
+
+function clearCustomer() {
+    sessionStorage.removeItem('dd_customer');
+    sessionStorage.removeItem('dd_last_customer');
+    sessionStorage.removeItem('dd_last_order');
+    sessionStorage.removeItem('dd_last_order_id');
+    document.getElementById('customer-name').value = '';
+    document.getElementById('customer-email').value = '';
+    document.getElementById('customer-phone').value = '';
+    document.getElementById('customer-address').value = '';
+    document.getElementById('customer-city').value = '';
+    document.getElementById('customer-postal').value = '';
+    document.getElementById('customer-country').value = 'HT';
+    onCountryChange();
+    document.getElementById('saved-card').style.display = 'none';
+    showNotice('Vous pouvez saisir de nouvelles informations.');
+}
+
+hydrate();
+</script>
+</body>
+</html>
