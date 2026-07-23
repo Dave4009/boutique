@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin | Dave Deliscart</title>
+    <title>Admin | D D</title>
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
@@ -115,6 +115,64 @@
             letter-spacing:1px; cursor:pointer; transition:all 0.3s; margin-top:8px; display:none;
         }
         .btn-cancel:hover { border-color:var(--red); color:var(--red); }
+
+        /* IMAGE PICKER */
+        .image-picker { display:flex; gap:12px; align-items:flex-start; }
+        .image-preview {
+            width:80px; height:96px; flex-shrink:0; border-radius:2px;
+            background:#0d0d0d; border:1px solid rgba(255,255,255,0.1);
+            display:flex; align-items:center; justify-content:center; overflow:hidden;
+        }
+        .image-preview img { width:100%; height:100%; object-fit:cover; display:none; }
+        .image-preview i { color:rgba(255,255,255,0.15); font-size:1.6rem; }
+        .image-picker-actions { flex:1; display:flex; flex-direction:column; gap:8px; }
+        .btn-img-action {
+            padding:10px; font-size:0.75rem; text-transform:uppercase; letter-spacing:1px;
+            cursor:pointer; border:1px solid rgba(212,175,55,0.3); background:transparent;
+            color:var(--gold); transition:all 0.3s; text-align:center; font-weight:600;
+        }
+        .btn-img-action:hover { background:var(--gold); color:var(--black-deep); }
+        .btn-img-action:disabled { opacity:0.5; cursor:not-allowed; }
+        .image-hint { font-size:0.7rem; color:var(--grey); margin-top:6px; line-height:1.5; }
+
+        /* GALLERY MODAL */
+        .modal-overlay {
+            position:fixed; inset:0; background:rgba(0,0,0,0.75);
+            z-index:9998; align-items:center; justify-content:center; padding:20px;
+        }
+        .modal-box {
+            background:var(--black-surface); border:1px solid rgba(212,175,55,0.2);
+            width:100%; max-width:760px; max-height:82vh; display:flex; flex-direction:column;
+        }
+        .modal-head {
+            display:flex; justify-content:space-between; align-items:center;
+            padding:1.2rem 1.5rem; border-bottom:1px solid rgba(212,175,55,0.15);
+        }
+        .modal-head h3 { font-size:1.05rem; letter-spacing:1px; }
+        .btn-modal-close {
+            background:transparent; border:none; color:var(--grey); font-size:1.4rem;
+            cursor:pointer; line-height:1; transition:color 0.2s;
+        }
+        .btn-modal-close:hover { color:var(--red); }
+        .modal-body { padding:1.5rem; overflow-y:auto; }
+        .gallery-grid {
+            display:grid; grid-template-columns:repeat(auto-fill, minmax(110px, 1fr));
+            gap:12px;
+        }
+        .gallery-item {
+            position:relative; aspect-ratio:4/5; cursor:pointer; border-radius:2px;
+            overflow:hidden; border:1px solid rgba(255,255,255,0.08); transition:border-color 0.2s;
+        }
+        .gallery-item:hover { border-color:var(--gold); }
+        .gallery-item img { width:100%; height:100%; object-fit:cover; display:block; }
+        .gallery-delete {
+            position:absolute; top:5px; right:5px; width:26px; height:26px;
+            background:rgba(10,10,10,0.85); border:1px solid rgba(231,76,60,0.4); color:var(--red);
+            display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:0.72rem;
+            opacity:0; transition:opacity 0.2s;
+        }
+        .gallery-item:hover .gallery-delete { opacity:1; }
+        .gallery-upload-inline { text-align:center; padding:2.5rem; color:var(--grey); }
 
         /* IMPORT/EXPORT */
         .io-btns { display:flex; gap:8px; }
@@ -335,8 +393,20 @@
                 </div>
 
                 <div class="form-group">
-                    <label>URL image de couverture *</label>
-                    <input type="url" id="f-image" placeholder="https://...">
+                    <label>Image de couverture *</label>
+                    <div class="image-picker">
+                        <div class="image-preview" id="image-preview">
+                            <img id="image-preview-img" src="" alt="">
+                            <i class="fas fa-image" id="image-preview-placeholder"></i>
+                        </div>
+                        <div class="image-picker-actions">
+                            <button type="button" class="btn-img-action" id="btn-upload-image" onclick="document.getElementById('f-image-upload').click()"><i class="fas fa-upload" style="margin-right:5px"></i>Importer une image</button>
+                            <button type="button" class="btn-img-action" onclick="openGallery()"><i class="fas fa-images" style="margin-right:5px"></i>Choisir dans la galerie</button>
+                        </div>
+                    </div>
+                    <input type="file" id="f-image-upload" accept="image/*" style="display:none" onchange="uploadImage(this)">
+                    <input type="hidden" id="f-image">
+                    <div class="image-hint">L'image est importée dans la galerie et réutilisable pour d'autres produits.</div>
                 </div>
 
                 <div class="form-group">
@@ -435,6 +505,24 @@
     </div>
 </div>
 
+<!-- GALERIE D'IMAGES -->
+<div class="modal-overlay" id="gallery-modal" style="display:none">
+    <div class="modal-box">
+        <div class="modal-head">
+            <h3><i class="fas fa-images" style="margin-right:8px;color:var(--gold)"></i>Galerie d'images</h3>
+            <button class="btn-modal-close" onclick="closeGallery()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="loader" id="gallery-loader"></div>
+            <div class="gallery-grid" id="gallery-grid" style="display:none"></div>
+            <div class="gallery-upload-inline" id="gallery-empty" style="display:none">
+                <i class="fas fa-image" style="font-size:2rem;opacity:0.2;display:block;margin-bottom:0.8rem"></i>
+                Aucune image importée pour le moment.<br>Utilisez "Importer une image" pour commencer votre galerie.
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- TOAST -->
 <div class="toast" id="toast"><i class="fas fa-check-circle"></i><span id="toast-msg"></span></div>
 
@@ -449,6 +537,7 @@ let customers = [];
 let orders = [];
 let editingId = null;
 let deliveryType = 'digital';
+const IMAGE_BUCKET = 'product-images';
 
 // ─── AUTH ───
 async function doLogin() {
@@ -532,6 +621,120 @@ function setDelivery(type) {
     document.getElementById('opt-digital').classList.toggle('active', type === 'digital');
     document.getElementById('opt-physical').classList.toggle('active', type === 'physical');
     document.getElementById('delivery-link-group').style.display = type === 'digital' ? 'block' : 'none';
+}
+
+// ─── IMAGES (GALERIE / UPLOAD) ───
+function setImagePreview(url) {
+    document.getElementById('f-image').value = url || '';
+    const img = document.getElementById('image-preview-img');
+    const placeholder = document.getElementById('image-preview-placeholder');
+    if (url) {
+        img.src = url;
+        img.style.display = 'block';
+        placeholder.style.display = 'none';
+    } else {
+        img.style.display = 'none';
+        img.src = '';
+        placeholder.style.display = 'block';
+    }
+}
+
+async function uploadImage(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+        showToast('Veuillez sélectionner un fichier image.', true);
+        input.value = '';
+        return;
+    }
+
+    const btn = document.getElementById('btn-upload-image');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:5px"></i>Import en cours...';
+
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+    const base = file.name.replace(/\.[^/.]+$/, '').toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').slice(0, 40);
+    const path = `${Date.now()}-${base || 'image'}.${ext}`;
+
+    try {
+        const { error: uploadError } = await db.storage.from(IMAGE_BUCKET).upload(path, file, {
+            cacheControl: '3600',
+            upsert: false
+        });
+        if (uploadError) throw uploadError;
+
+        const { data } = db.storage.from(IMAGE_BUCKET).getPublicUrl(path);
+        setImagePreview(data.publicUrl);
+        showToast('Image importée dans la galerie.');
+    } catch (e) {
+        showToast('Erreur d\'import : ' + e.message, true);
+    }
+
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-upload" style="margin-right:5px"></i>Importer une image';
+    input.value = '';
+}
+
+async function openGallery() {
+    const modal = document.getElementById('gallery-modal');
+    const loader = document.getElementById('gallery-loader');
+    const grid = document.getElementById('gallery-grid');
+    const empty = document.getElementById('gallery-empty');
+
+    modal.style.display = 'flex';
+    loader.style.display = 'block';
+    grid.style.display = 'none';
+    empty.style.display = 'none';
+
+    try {
+        const { data, error } = await db.storage.from(IMAGE_BUCKET).list('', {
+            limit: 300,
+            sortBy: { column: 'created_at', order: 'desc' }
+        });
+        if (error) throw error;
+
+        const files = (data || []).filter(f => f.id);
+
+        if (!files.length) {
+            empty.style.display = 'block';
+        } else {
+            grid.innerHTML = files.map(f => {
+                const { data: pub } = db.storage.from(IMAGE_BUCKET).getPublicUrl(f.name);
+                const url = pub.publicUrl;
+                return `
+                    <div class="gallery-item" onclick="selectGalleryImage('${url}')">
+                        <img src="${url}" alt="" loading="lazy">
+                        <button class="gallery-delete" onclick="event.stopPropagation(); deleteGalleryImage('${f.name}')" title="Supprimer de la galerie"><i class="fas fa-trash"></i></button>
+                    </div>`;
+            }).join('');
+            grid.style.display = 'grid';
+        }
+    } catch (e) {
+        showToast('Erreur de chargement de la galerie : ' + e.message, true);
+        empty.style.display = 'block';
+    }
+
+    loader.style.display = 'none';
+}
+
+function closeGallery() {
+    document.getElementById('gallery-modal').style.display = 'none';
+}
+
+function selectGalleryImage(url) {
+    setImagePreview(url);
+    closeGallery();
+}
+
+async function deleteGalleryImage(name) {
+    if (!confirm('Supprimer cette image de la galerie ? Elle restera visible sur les produits qui l\'utilisent déjà tant que le lien existe, mais ne pourra plus être choisie.')) return;
+    const { error } = await db.storage.from(IMAGE_BUCKET).remove([name]);
+    if (error) { showToast('Erreur de suppression : ' + error.message, true); return; }
+    showToast('Image supprimée de la galerie.');
+    openGallery();
 }
 
 // ─── PRODUITS ───
@@ -737,7 +940,7 @@ function editProduct(id) {
     document.getElementById('f-name').value = p.name;
     document.getElementById('f-category').value = p.category;
     document.getElementById('f-price').value = p.price;
-    document.getElementById('f-image').value = p.image || '';
+    setImagePreview(p.image || '');
     document.getElementById('f-stripe').value = p.stripepaymentlink || '';
     document.getElementById('f-description').value = p.description || '';
     document.getElementById('f-delivery-link').value = p.deliverylink || '';
@@ -758,7 +961,7 @@ function cancelEdit() {
     document.getElementById('f-name').value = '';
     document.getElementById('f-category').value = getCategories()[0] || '';
     document.getElementById('f-price').value = '';
-    document.getElementById('f-image').value = '';
+    setImagePreview('');
     document.getElementById('f-stripe').value = '';
     document.getElementById('f-description').value = '';
     document.getElementById('f-delivery-link').value = '';
