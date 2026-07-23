@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin | D D</title>
+    <title>Admin | Dave Deliscart</title>
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
@@ -134,6 +134,28 @@
         .btn-img-action:hover { background:var(--gold); color:var(--black-deep); }
         .btn-img-action:disabled { opacity:0.5; cursor:not-allowed; }
         .image-hint { font-size:0.7rem; color:var(--grey); margin-top:6px; line-height:1.5; }
+
+        .extra-images-grid {
+            display:grid; grid-template-columns:repeat(auto-fill, minmax(58px, 1fr));
+            gap:8px; margin-bottom:10px;
+        }
+        .extra-images-grid:empty { display:none; margin-bottom:0; }
+        .extra-image-item {
+            position:relative; aspect-ratio:4/5; border-radius:2px; overflow:hidden;
+            border:1px solid rgba(255,255,255,0.08);
+        }
+        .extra-image-item img { width:100%; height:100%; object-fit:cover; display:block; }
+        .extra-image-remove {
+            position:absolute; top:3px; right:3px; width:20px; height:20px;
+            background:rgba(10,10,10,0.85); border:1px solid rgba(231,76,60,0.4); color:var(--red);
+            display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:0.62rem;
+        }
+        .thumb-badge {
+            position:absolute; bottom:-4px; right:-4px;
+            background:var(--gold); color:var(--black-deep);
+            font-size:0.6rem; font-weight:800; padding:1px 5px; border-radius:8px;
+            line-height:1.3;
+        }
 
         /* GALLERY MODAL */
         .modal-overlay {
@@ -410,6 +432,17 @@
                 </div>
 
                 <div class="form-group">
+                    <label>Images supplémentaires</label>
+                    <div class="extra-images-grid" id="extra-images-grid"></div>
+                    <div class="image-picker-actions" style="flex-direction:row">
+                        <button type="button" class="btn-img-action" onclick="document.getElementById('f-extra-upload').click()"><i class="fas fa-upload" style="margin-right:5px"></i>Importer</button>
+                        <button type="button" class="btn-img-action" onclick="openGallery('extra')"><i class="fas fa-images" style="margin-right:5px"></i>Depuis la galerie</button>
+                    </div>
+                    <input type="file" id="f-extra-upload" accept="image/*" style="display:none" onchange="uploadExtraImage(this)">
+                    <div class="image-hint">Affichées dans une galerie sur la fiche produit, en plus de l'image de couverture.</div>
+                </div>
+
+                <div class="form-group">
                     <label>Lien Stripe (Payment Link) *</label>
                     <input type="url" id="f-stripe" placeholder="https://buy.stripe.com/...">
                 </div>
@@ -537,6 +570,8 @@ let customers = [];
 let orders = [];
 let editingId = null;
 let deliveryType = 'digital';
+let extraImages = [];
+let galleryTarget = 'cover';
 const IMAGE_BUCKET = 'product-images';
 
 // ─── AUTH ───
@@ -639,6 +674,23 @@ function setImagePreview(url) {
     }
 }
 
+async function uploadToBucket(file) {
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+    const base = file.name.replace(/\.[^/.]+$/, '').toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').slice(0, 40);
+    const path = `${Date.now()}-${base || 'image'}.${ext}`;
+
+    const { error: uploadError } = await db.storage.from(IMAGE_BUCKET).upload(path, file, {
+        cacheControl: '3600',
+        upsert: false
+    });
+    if (uploadError) throw uploadError;
+
+    const { data } = db.storage.from(IMAGE_BUCKET).getPublicUrl(path);
+    return data.publicUrl;
+}
+
 async function uploadImage(input) {
     const file = input.files[0];
     if (!file) return;
@@ -653,21 +705,9 @@ async function uploadImage(input) {
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:5px"></i>Import en cours...';
 
-    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
-    const base = file.name.replace(/\.[^/.]+$/, '').toLowerCase()
-        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-        .replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').slice(0, 40);
-    const path = `${Date.now()}-${base || 'image'}.${ext}`;
-
     try {
-        const { error: uploadError } = await db.storage.from(IMAGE_BUCKET).upload(path, file, {
-            cacheControl: '3600',
-            upsert: false
-        });
-        if (uploadError) throw uploadError;
-
-        const { data } = db.storage.from(IMAGE_BUCKET).getPublicUrl(path);
-        setImagePreview(data.publicUrl);
+        const url = await uploadToBucket(file);
+        setImagePreview(url);
         showToast('Image importée dans la galerie.');
     } catch (e) {
         showToast('Erreur d\'import : ' + e.message, true);
@@ -678,7 +718,56 @@ async function uploadImage(input) {
     input.value = '';
 }
 
-async function openGallery() {
+// ─── IMAGES SUPPLÉMENTAIRES DU PRODUIT ───
+function renderExtraImages() {
+    const grid = document.getElementById('extra-images-grid');
+    grid.innerHTML = extraImages.map((url, i) => `
+        <div class="extra-image-item">
+            <img src="${url}" alt="">
+            <div class="extra-image-remove" onclick="removeExtraImage(${i})" title="Retirer"><i class="fas fa-times"></i></div>
+        </div>`).join('');
+}
+
+function removeExtraImage(index) {
+    extraImages.splice(index, 1);
+    renderExtraImages();
+}
+
+function getExtraImagesFromProduct(p) {
+    if (Array.isArray(p.images)) return p.images.filter(Boolean);
+    if (typeof p.images === 'string') {
+        try {
+            const parsed = JSON.parse(p.images);
+            return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
+        } catch { return []; }
+    }
+    return [];
+}
+
+async function uploadExtraImage(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+        showToast('Veuillez sélectionner un fichier image.', true);
+        input.value = '';
+        return;
+    }
+
+    try {
+        const url = await uploadToBucket(file);
+        extraImages.push(url);
+        renderExtraImages();
+        showToast('Image ajoutée au produit.');
+    } catch (e) {
+        showToast('Erreur d\'import : ' + e.message, true);
+    }
+
+    input.value = '';
+}
+
+async function openGallery(target = 'cover') {
+    galleryTarget = target;
     const modal = document.getElementById('gallery-modal');
     const loader = document.getElementById('gallery-loader');
     const grid = document.getElementById('gallery-grid');
@@ -725,7 +814,14 @@ function closeGallery() {
 }
 
 function selectGalleryImage(url) {
-    setImagePreview(url);
+    if (galleryTarget === 'extra') {
+        if (!extraImages.includes(url)) {
+            extraImages.push(url);
+            renderExtraImages();
+        }
+    } else {
+        setImagePreview(url);
+    }
     closeGallery();
 }
 
@@ -761,9 +857,11 @@ function updateStats() {
 function renderTable() {
     const body = document.getElementById('table-body');
     if (!products.length) { body.innerHTML = ''; return; }
-    body.innerHTML = products.map(p => `
+    body.innerHTML = products.map(p => {
+        const extraCount = getExtraImagesFromProduct(p).length;
+        return `
         <tr>
-            <td><img src="${p.image}" alt="" class="thumb" onerror="this.style.opacity='0.2'"></td>
+            <td><div style="position:relative;display:inline-block"><img src="${p.image}" alt="" class="thumb" onerror="this.style.opacity='0.2'">${extraCount ? `<span class="thumb-badge">+${extraCount}</span>` : ''}</div></td>
             <td><div class="product-name-cell">${p.name}</div></td>
             <td><span class="cat-pill">${p.category}</span></td>
             <td class="price-cell">$${parseFloat(p.price).toFixed(2)}</td>
@@ -775,7 +873,8 @@ function renderTable() {
                     <button class="btn-delete" onclick="deleteProduct('${p.id}')"><i class="fas fa-trash"></i></button>
                 </div>
             </td>
-        </tr>`).join('');
+        </tr>`;
+    }).join('');
 }
 
 // ─── CLIENTS & COMMANDES ───
@@ -907,7 +1006,7 @@ async function submitForm() {
         showToast('Remplis tous les champs obligatoires (*).', true); return;
     }
 
-    const payload = { name, category, price, image, stripepaymentlink, description, deliverytype: deliveryType, deliverylink: deliverylink || null };
+    const payload = { name, category, price, image, images: extraImages, stripepaymentlink, description, deliverytype: deliveryType, deliverylink: deliverylink || null };
 
     const btn = document.getElementById('btn-submit-form');
     btn.disabled = true; btn.textContent = editingId ? 'Mise à jour...' : 'Publication...';
@@ -941,6 +1040,8 @@ function editProduct(id) {
     document.getElementById('f-category').value = p.category;
     document.getElementById('f-price').value = p.price;
     setImagePreview(p.image || '');
+    extraImages = getExtraImagesFromProduct(p);
+    renderExtraImages();
     document.getElementById('f-stripe').value = p.stripepaymentlink || '';
     document.getElementById('f-description').value = p.description || '';
     document.getElementById('f-delivery-link').value = p.deliverylink || '';
@@ -962,6 +1063,8 @@ function cancelEdit() {
     document.getElementById('f-category').value = getCategories()[0] || '';
     document.getElementById('f-price').value = '';
     setImagePreview('');
+    extraImages = [];
+    renderExtraImages();
     document.getElementById('f-stripe').value = '';
     document.getElementById('f-description').value = '';
     document.getElementById('f-delivery-link').value = '';
